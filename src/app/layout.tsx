@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { DisableNumberWheel } from "@/components/DisableNumberWheel";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
@@ -22,7 +23,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body>
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <DisableNumberWheel />
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

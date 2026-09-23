@@ -479,8 +479,7 @@ export default function OrdersClient() {
             <option value="">Selecione</option>
             {freeTables.map((table) => (
               <option key={table.id} value={table.id}>
-                Mesa {table.number} · {statusLabel(table.area)} ({table.seats}{" "}
-                lugares)
+                {formatTableLabel(table.number, table.area)}
               </option>
             ))}
           </select>

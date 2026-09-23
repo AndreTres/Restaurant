@@ -10,7 +10,6 @@ import { formatTableLabel, statusLabel } from "@/lib/format";
 import type { Table, TableArea } from "@/lib/types";
 
 const emptyForm = {
-  seats: "4",
   area: "inside" as TableArea,
   status: "free" as Table["status"],
 };
@@ -45,7 +44,6 @@ export default function TablesPage() {
   function openEdit(table: Table) {
     setEditing(table);
     setForm({
-      seats: String(table.seats),
       area: table.area ?? "inside",
       status: table.status,
     });
@@ -56,7 +54,7 @@ export default function TablesPage() {
     event.preventDefault();
 
     const payload = {
-      seats: Number(form.seats),
+      seats: editing?.seats ?? 4,
       area: form.area,
       status: form.status,
     };
@@ -140,10 +138,7 @@ export default function TablesPage() {
                   {statusLabel(table.status)}
                 </span>
               </div>
-              <p className="small muted" style={{ margin: "10px 0 14px" }}>
-                {table.seats} lugares
-              </p>
-              <div className="stack" style={{ gap: 8 }}>
+              <div className="stack" style={{ gap: 8, marginTop: 14 }}>
                 <button
                   type="button"
                   className="btn secondary"
@@ -179,17 +174,6 @@ export default function TablesPage() {
         onClose={() => setOpen(false)}
         onSubmit={handleSubmit}
       >
-        <div className="field">
-          <label htmlFor="table-seats">Lugares</label>
-          <input
-            id="table-seats"
-            type="number"
-            min="1"
-            value={form.seats}
-            onChange={(event) => setForm({ ...form, seats: event.target.value })}
-            required
-          />
-        </div>
         <div className="field">
           <label htmlFor="table-area">Área</label>
           <select
