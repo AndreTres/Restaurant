@@ -32,7 +32,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
   }
 
   const db = getDb();
-  const existing = db.prepare("SELECT id FROM tables WHERE id = ?").get(id);
+  const existing = db
+    .prepare("SELECT id, number, area FROM tables WHERE id = ?")
+    .get(id) as { id: number; number: number; area: string } | undefined;
   if (!existing) {
     return NextResponse.json({ error: "Mesa não encontrada" }, { status: 404 });
   }
@@ -47,12 +49,19 @@ export async function PUT(request: NextRequest, { params }: Params) {
     );
   }
 
-  db.prepare("UPDATE tables SET seats = ?, status = ?, area = ? WHERE id = ?").run(
-    seats,
-    status,
-    area,
-    id
-  );
+  let number = existing.number;
+  if (existing.area !== area) {
+    const maxNumber = db
+      .prepare(
+        "SELECT COALESCE(MAX(number), 0) as max FROM tables WHERE area = ?"
+      )
+      .get(area) as { max: number };
+    number = maxNumber.max + 1;
+  }
+
+  db.prepare(
+    "UPDATE tables SET number = ?, seats = ?, status = ?, area = ? WHERE id = ?"
+  ).run(number, seats, status, area, id);
 
   const table = db.prepare("SELECT * FROM tables WHERE id = ?").get(id);
   return NextResponse.json(table);

@@ -42,8 +42,10 @@ export async function POST(request: NextRequest) {
 
   const db = getDb();
   const maxNumber = db
-    .prepare("SELECT COALESCE(MAX(number), 0) as max FROM tables")
-    .get() as { max: number };
+    .prepare(
+      "SELECT COALESCE(MAX(number), 0) as max FROM tables WHERE area = ?"
+    )
+    .get(area) as { max: number };
   const number = maxNumber.max + 1;
 
   const result = db

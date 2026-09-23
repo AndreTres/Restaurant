@@ -8,7 +8,7 @@ Painel administrativo mobile-first para gestão do restaurante boliviano.
 - Dashboard com resumo do salão
 - CRUD de produtos (cardápio)
 - CRUD de garçons
-- CRUD de mesas (7 externas + 4 internas)
+- CRUD de mesas (9 externas 1-9 + 8 internas 1-8)
 - Pedidos editáveis (adicionar/remover itens) e finalização
 - Taxa de serviço de **10%** no total do pedido
 - Histórico de pedidos finalizados com filtros (semana / mês / data)

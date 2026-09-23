@@ -7,15 +7,14 @@ import { syncTablesAvailability } from "./tables";
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DATA_DIR, "restaurant.db");
 
-/** 7 externas (1–7) + 4 internas (8–11) */
 export const DEFAULT_TABLES = [
-  ...Array.from({ length: 7 }, (_, index) => ({
+  ...Array.from({ length: 9 }, (_, index) => ({
     number: index + 1,
     seats: 4,
     area: "outside" as const,
   })),
-  ...Array.from({ length: 4 }, (_, index) => ({
-    number: index + 8,
+  ...Array.from({ length: 8 }, (_, index) => ({
+    number: index + 1,
     seats: 4,
     area: "inside" as const,
   })),
@@ -74,11 +73,12 @@ function createSchema(db: DatabaseSync) {
 
     CREATE TABLE IF NOT EXISTS tables (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      number INTEGER NOT NULL UNIQUE,
+      number INTEGER NOT NULL,
       seats INTEGER NOT NULL DEFAULT 4,
       area TEXT NOT NULL DEFAULT 'inside',
       status TEXT NOT NULL DEFAULT 'free',
-      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      UNIQUE(number, area)
     );
 
     CREATE TABLE IF NOT EXISTS orders (
@@ -106,6 +106,59 @@ function createSchema(db: DatabaseSync) {
   `);
 }
 
+function hasGlobalNumberUnique(db: DatabaseSync) {
+  const indexes = db.prepare("PRAGMA index_list(tables)").all() as {
+    name: string;
+    unique: number;
+  }[];
+
+  for (const index of indexes) {
+    if (!index.unique) continue;
+    const columns = db
+      .prepare(`PRAGMA index_info(${JSON.stringify(index.name)})`)
+      .all() as { name: string }[];
+    if (columns.length === 1 && columns[0].name === "number") {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function rebuildTablesAreaUnique(db: DatabaseSync) {
+  db.exec("PRAGMA foreign_keys = OFF");
+  db.exec(`
+    CREATE TABLE tables_new (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      number INTEGER NOT NULL,
+      seats INTEGER NOT NULL DEFAULT 4,
+      area TEXT NOT NULL DEFAULT 'inside',
+      status TEXT NOT NULL DEFAULT 'free',
+      created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      UNIQUE(number, area)
+    );
+    INSERT INTO tables_new (id, number, seats, area, status, created_at)
+    SELECT id, number, seats, area, status, created_at FROM tables;
+    DROP TABLE tables;
+    ALTER TABLE tables_new RENAME TO tables;
+  `);
+  db.exec("PRAGMA foreign_keys = ON");
+}
+
+function renumberTablesByArea(db: DatabaseSync, area: "outside" | "inside") {
+  const rows = db
+    .prepare("SELECT id FROM tables WHERE area = ? ORDER BY number, id")
+    .all(area) as { id: number }[];
+  const update = db.prepare("UPDATE tables SET number = ? WHERE id = ?");
+
+  rows.forEach((row, index) => {
+    update.run(9000 + index, row.id);
+  });
+  rows.forEach((row, index) => {
+    update.run(index + 1, row.id);
+  });
+}
+
 function migrateSchema(db: DatabaseSync) {
   const columns = db.prepare("PRAGMA table_info(tables)").all() as {
     name: string;
@@ -118,27 +171,34 @@ function migrateSchema(db: DatabaseSync) {
     );
   }
 
+  if (hasGlobalNumberUnique(db)) {
+    rebuildTablesAreaUnique(db);
+  }
+
   return !hasArea;
 }
 
 function ensureDefaultTables(db: DatabaseSync, areaJustAdded: boolean) {
+  if (areaJustAdded) {
+    db.prepare(
+      "UPDATE tables SET area = 'outside' WHERE number BETWEEN 1 AND 7"
+    ).run();
+    db.prepare(
+      "UPDATE tables SET area = 'inside' WHERE number >= 8"
+    ).run();
+  }
+
+  renumberTablesByArea(db, "outside");
+  renumberTablesByArea(db, "inside");
+
   const insert = db.prepare(
     `INSERT INTO tables (number, seats, status, area)
      VALUES (?, ?, 'free', ?)
-     ON CONFLICT(number) DO NOTHING`
+     ON CONFLICT(number, area) DO NOTHING`
   );
 
   for (const table of DEFAULT_TABLES) {
     insert.run(table.number, table.seats, table.area);
-  }
-
-  if (areaJustAdded) {
-    const updateArea = db.prepare(
-      "UPDATE tables SET area = ? WHERE number = ?"
-    );
-    for (const table of DEFAULT_TABLES) {
-      updateArea.run(table.area, table.number);
-    }
   }
 }
 

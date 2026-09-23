@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { FormModal } from "@/components/Modal";
@@ -22,6 +22,22 @@ export default function TablesPage() {
   const [editing, setEditing] = useState<Table | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [pendingDelete, setPendingDelete] = useState<Table | null>(null);
+
+  const tablesByArea = useMemo(
+    () => [
+      {
+        area: "outside" as const,
+        title: "Externas",
+        items: tables.filter((table) => table.area === "outside"),
+      },
+      {
+        area: "inside" as const,
+        title: "Internas",
+        items: tables.filter((table) => table.area !== "outside"),
+      },
+    ],
+    [tables]
+  );
 
   async function loadTables() {
     setTables(await apiGet<Table[]>("/api/tables"));
@@ -110,8 +126,7 @@ export default function TablesPage() {
       <header className="page-header">
         <div>
           <h1>Mesas</h1>
-          <p>7 externas e 4 internas</p>
-        </div>
+          </div>
         <button type="button" className="btn" onClick={openCreate}>
           Adicionar
         </button>
@@ -127,49 +142,62 @@ export default function TablesPage() {
           onAction={openCreate}
         />
       ) : (
-        <div className="grid-2">
-          {tables.map((table) => (
-            <div key={table.id} className="card interactive">
-              <div className="actions-row">
-                <strong style={{ flex: 2, fontSize: "1.2rem" }}>
-                  {formatTableLabel(table.number, table.area)}
-                </strong>
-                <span className={`badge squared ${table.status}`}>
-                  {statusLabel(table.status)}
-                </span>
-              </div>
-              <div className="stack" style={{ gap: 8, marginTop: 14 }}>
-                <button
-                  type="button"
-                  className="btn secondary"
-                  onClick={() => cycleStatus(table)}
-                >
-                  Alternar status
-                </button>
-                <div className="actions-row">
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    onClick={() => openEdit(table)}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    onClick={() => setPendingDelete(table)}
-                  >
-                    Excluir
-                  </button>
+        <div className="stack" style={{ gap: 20 }}>
+          {tablesByArea.map((group) =>
+            group.items.length === 0 ? null : (
+              <section key={group.area}>
+                <div className="product-group-title">{group.title}</div>
+                <div className="grid-2">
+                  {group.items.map((table) => (
+                    <div key={table.id} className="card interactive">
+                      <div className="actions-row">
+                        <strong style={{ flex: 2, fontSize: "1.2rem" }}>
+                          Mesa {table.number}
+                        </strong>
+                        <span className={`badge squared ${table.status}`}>
+                          {statusLabel(table.status)}
+                        </span>
+                      </div>
+                      <div className="stack" style={{ gap: 8, marginTop: 14 }}>
+                        <button
+                          type="button"
+                          className="btn secondary"
+                          onClick={() => cycleStatus(table)}
+                        >
+                          Alternar status
+                        </button>
+                        <div className="actions-row">
+                          <button
+                            type="button"
+                            className="btn ghost"
+                            onClick={() => openEdit(table)}
+                          >
+                            Editar
+                          </button>
+                          <button
+                            type="button"
+                            className="btn ghost"
+                            onClick={() => setPendingDelete(table)}
+                          >
+                            Excluir
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            </div>
-          ))}
+              </section>
+            )
+          )}
         </div>
       )}
 
       <FormModal
-        title={editing ? `Editar mesa ${editing.number}` : "Nova mesa"}
+        title={
+          editing
+            ? `Editar ${formatTableLabel(editing.number, editing.area)}`
+            : "Nova mesa"
+        }
         open={open}
         onClose={() => setOpen(false)}
         onSubmit={handleSubmit}
@@ -214,7 +242,7 @@ export default function TablesPage() {
         title="Excluir mesa"
         message={
           pendingDelete
-            ? `Excluir a mesa ${pendingDelete.number}? Esta ação não pode ser desfeita.`
+            ? `Excluir ${formatTableLabel(pendingDelete.number, pendingDelete.area)}? Esta ação não pode ser desfeita.`
             : ""
         }
         confirmLabel="Excluir"
