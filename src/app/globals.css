@@ -277,6 +277,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .field label {
@@ -323,6 +324,12 @@ button {
 .field textarea {
   min-height: 96px;
   resize: none;
+}
+
+.field input[type="date"] {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .field input:focus,
@@ -482,17 +489,27 @@ button {
   top: calc(var(--nav-height) + 18px);
   transform: translateX(-50%);
   width: min(calc(100% - 32px), 420px);
-  background: var(--text);
-  color: white;
+  background: var(--success-soft);
+  color: var(--success);
+  border: 1px solid rgba(0, 122, 51, 0.18);
+  box-shadow: var(--shadow);
   padding: 12px 16px;
   border-radius: 14px;
   z-index: 100;
-  animation: fadeUp 0.25s ease;
+  animation: toastIn 0.25s ease;
   font-size: 0.92rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 .toast.error {
-  background: var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: rgba(218, 41, 28, 0.18);
+}
+
+.toast.leaving {
+  animation: toastOut 0.28s ease forwards;
 }
 
 .login-screen {
@@ -671,16 +688,60 @@ button {
   pointer-events: none;
 }
 
+.history-filters {
+  min-width: 0;
+}
+
 .history-card {
   animation: none;
 }
 
+.history-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.history-card-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.history-delete {
+  flex: 0 0 auto;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+}
+
 .status-pills {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
-  overflow-x: auto;
+  max-width: 100%;
   padding-bottom: 4px;
   margin-bottom: 8px;
+}
+
+@media (max-width: 480px) {
+  .history-filters .field input[type="date"] {
+    display: block;
+    padding-inline: 12px;
+  }
+
+  .history-filters .field input[type="date"]::-webkit-datetime-edit {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .history-filters .field input[type="date"]::-webkit-calendar-picker-indicator {
+    margin: 0;
+    padding: 0;
+  }
 }
 
 .status-pills button {
@@ -708,6 +769,28 @@ button {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
   }
 }
 

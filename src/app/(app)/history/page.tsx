@@ -1,10 +1,11 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { EmptyState } from "@/components/EmptyState";
 import { OrderTotals } from "@/components/OrderTotals";
 import { useToast } from "@/components/Toast";
-import { apiGet } from "@/lib/api";
+import { apiGet, apiSend } from "@/lib/api";
 import {
   describeHistoryRange,
   historyFiltersToQuery,
@@ -36,6 +37,9 @@ function HistoryContent() {
     period: "week",
     date: toDateInputValue(new Date()),
   });
+  const [pendingDelete, setPendingDelete] = useState<OrderWithDetails | null>(
+    null
+  );
 
   useEffect(() => {
     let active = true;
@@ -83,9 +87,19 @@ function HistoryContent() {
     });
   }
 
+  async function deleteOrder(order: OrderWithDetails) {
+    try {
+      await apiSend(`/api/orders/${order.id}`, "DELETE");
+      setOrders((current) => current.filter((item) => item.id !== order.id));
+      showToast("Pedido excluído");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Erro", "error");
+    }
+  }
+
   return (
     <>
-      <section className="card stack" style={{ marginBottom: 12 }}>
+      <section className="card stack history-filters" style={{ marginBottom: 12 }}>
         <div className="status-pills" style={{ marginBottom: 0 }}>
           {PERIOD_OPTIONS.map((option) => (
             <button
@@ -136,15 +150,41 @@ function HistoryContent() {
             <div className="stack">
               {orders.map((order) => (
                 <article key={order.id} className="card history-card">
-                  <div className="actions-row">
-                    <strong style={{ flex: 2 }}>
-                      {formatTableLabel(order.table_number, order.table_area)}
-                    </strong>
-                    <span
-                      className={`badge ${orderStatusBadgeClass(order.status)}`}
+                  <div className="history-card-top">
+                    <div className="history-card-heading">
+                      <strong>
+                        {formatTableLabel(order.table_number, order.table_area)}
+                      </strong>
+                      <span
+                        className={`badge ${orderStatusBadgeClass(order.status)}`}
+                      >
+                        {statusLabel(order.status)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn ghost history-delete"
+                      aria-label="Excluir pedido"
+                      onClick={() => setPendingDelete(order)}
                     >
-                      {statusLabel(order.status)}
-                    </span>
+                      <svg
+                        width="18"
+                        height="18"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4h8v2" />
+                        <path d="M19 6l-1 14H6L5 6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                      </svg>
+                    </button>
                   </div>
                   <p className="small muted" style={{ margin: "8px 0" }}>
                     {order.waiter_name} ·{" "}
@@ -180,6 +220,22 @@ function HistoryContent() {
           )}
         </div>
       )}
+
+      <ConfirmModal
+        open={Boolean(pendingDelete)}
+        title="Excluir pedido"
+        message={
+          pendingDelete
+            ? `Excluir o pedido da ${formatTableLabel(pendingDelete.table_number, pendingDelete.table_area)}? Esta ação não pode ser desfeita.`
+            : ""
+        }
+        confirmLabel="Excluir"
+        danger
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (pendingDelete) void deleteOrder(pendingDelete);
+        }}
+      />
     </>
   );
 }
