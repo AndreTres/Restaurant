@@ -15,6 +15,7 @@ import {
 } from "@/lib/order-filters";
 import {
   formatDateTime,
+  formatIsoDate,
   formatMoney,
   formatTableLabel,
   orderStatusBadgeClass,
@@ -120,12 +121,34 @@ function HistoryContent() {
 
         <div className="field">
           <label htmlFor="history-date">Buscar por data</label>
-          <input
-            id="history-date"
-            type="date"
-            value={filters.date || toDateInputValue(new Date())}
-            onChange={(event) => setDate(event.target.value)}
-          />
+          <div className="date-field">
+            <span className="date-field-value">
+              {formatIsoDate(filters.date || toDateInputValue(new Date()))}
+            </span>
+            <input
+              id="history-date"
+              type="date"
+              value={filters.date || toDateInputValue(new Date())}
+              onChange={(event) => setDate(event.target.value)}
+            />
+            <span className="date-field-icon" aria-hidden="true">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4" />
+                <path d="M8 2v4" />
+                <path d="M3 10h18" />
+              </svg>
+            </span>
+          </div>
         </div>
 
         <p className="small muted" style={{ margin: 0 }}>

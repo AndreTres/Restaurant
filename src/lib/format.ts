@@ -7,6 +7,12 @@ export function formatMoney(value: number) {
   });
 }
 
+export function formatIsoDate(value: string) {
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
+}
+
 export function formatDateTime(value: string) {
   const date = new Date(value.replace(" ", "T"));
   if (Number.isNaN(date.getTime())) return value;

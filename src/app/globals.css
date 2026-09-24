@@ -326,10 +326,62 @@ button {
   resize: none;
 }
 
-.field input[type="date"] {
+.date-field {
+  position: relative;
+  min-width: 0;
+}
+
+.date-field input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  color: transparent;
+  caret-color: transparent;
+}
+
+.date-field input[type="date"]::-webkit-date-and-time-value {
+  color: transparent;
+}
+
+.date-field input[type="date"]::-webkit-datetime-edit,
+.date-field input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+.date-field input[type="date"]::-webkit-datetime-edit-text,
+.date-field input[type="date"]::-webkit-datetime-edit-month-field,
+.date-field input[type="date"]::-webkit-datetime-edit-day-field,
+.date-field input[type="date"]::-webkit-datetime-edit-year-field {
+  color: transparent;
+}
+
+.date-field input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.date-field-value {
+  position: absolute;
+  inset: 0 44px 0 14px;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  color: var(--text);
+}
+
+.date-field-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: var(--text-muted);
+  pointer-events: none;
 }
 
 .field input:focus,
@@ -725,23 +777,6 @@ button {
   max-width: 100%;
   padding-bottom: 4px;
   margin-bottom: 8px;
-}
-
-@media (max-width: 480px) {
-  .history-filters .field input[type="date"] {
-    display: block;
-    padding-inline: 12px;
-  }
-
-  .history-filters .field input[type="date"]::-webkit-datetime-edit {
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  .history-filters .field input[type="date"]::-webkit-calendar-picker-indicator {
-    margin: 0;
-    padding: 0;
-  }
 }
 
 .status-pills button {
