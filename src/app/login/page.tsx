@@ -2,14 +2,16 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/components/Session";
 import { apiSend } from "@/lib/api";
 import { useToast } from "@/components/Toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { refreshSession } = useSession();
   const { showToast } = useToast();
-  const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
@@ -18,6 +20,7 @@ export default function LoginPage() {
 
     try {
       await apiSend("/api/auth", "POST", { username, password });
+      await refreshSession();
       showToast("Bem-vindo de volta");
       router.replace("/");
       router.refresh();
@@ -35,7 +38,7 @@ export default function LoginPage() {
     <div className="login-screen app-shell no-nav">
       <form className="card login-card stack" onSubmit={handleSubmit}>
         <div className="brand">
-          <span>Admin · Bolívia</span>
+          <span>Painel do restaurante</span>
           <h1>Sabores de mi Tierra</h1>
           <p>Gestão rápida de mesas, cardápio e pedidos.</p>
         </div>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAdmin, requireAuth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { parseHistoryFilters } from "@/lib/order-filters";
 import {
@@ -21,6 +21,11 @@ export async function GET(request: NextRequest) {
         date: request.nextUrl.searchParams.get("date"),
       })
     : undefined;
+
+  if (history) {
+    const forbidden = await requireAdmin();
+    if (forbidden) return forbidden;
+  }
 
   return NextResponse.json(listOrders({ history, status, filters }));
 }

@@ -7,6 +7,7 @@ import { FormModal } from "@/components/Modal";
 import { useToast } from "@/components/Toast";
 import { apiGet, apiSend } from "@/lib/api";
 import { formatMoney } from "@/lib/format";
+import { groupProductsByCategory } from "@/lib/products";
 import type { Product } from "@/lib/types";
 
 const emptyForm = {
@@ -26,20 +27,10 @@ export default function ProductsPage() {
   const [form, setForm] = useState(emptyForm);
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
 
-  const productsByCategory = useMemo(() => {
-    const groups = new Map<string, Product[]>();
-
-    for (const product of products) {
-      const category = product.category?.trim() || "Geral";
-      const list = groups.get(category) ?? [];
-      list.push(product);
-      groups.set(category, list);
-    }
-
-    return Array.from(groups.entries()).sort(([a], [b]) =>
-      a.localeCompare(b, "pt-BR")
-    );
-  }, [products]);
+  const productsByCategory = useMemo(
+    () => groupProductsByCategory(products),
+    [products]
+  );
 
   async function loadProducts() {
     const data = await apiGet<Product[]>("/api/products");

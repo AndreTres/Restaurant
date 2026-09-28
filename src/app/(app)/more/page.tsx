@@ -2,16 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
 import { apiSend } from "@/lib/api";
 
 export default function MorePage() {
   const router = useRouter();
+  const { session, refreshSession } = useSession();
   const { showToast } = useToast();
 
   async function handleLogout() {
     try {
       await apiSend("/api/auth", "DELETE");
+      await refreshSession();
       showToast("Sessão encerrada");
       router.replace("/login");
       router.refresh();
@@ -33,9 +36,11 @@ export default function MorePage() {
         <Link href="/waiters" className="btn secondary">
           Garçons
         </Link>
-        <Link href="/history" className="btn secondary">
-          Histórico de pedidos
-        </Link>
+        {session.role === "admin" ? (
+          <Link href="/history" className="btn secondary">
+            Histórico de pedidos
+          </Link>
+        ) : null}
         <Link href="/products" className="btn secondary">
           Cardápio
         </Link>

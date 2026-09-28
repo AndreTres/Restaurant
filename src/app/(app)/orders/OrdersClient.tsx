@@ -9,6 +9,7 @@ import { OrderTotals } from "@/components/OrderTotals";
 import { useToast } from "@/components/Toast";
 import { apiGet, apiSend } from "@/lib/api";
 import { formatMoney, formatTableLabel, orderStatusBadgeClass, statusLabel } from "@/lib/format";
+import { groupProductsByCategory } from "@/lib/products";
 import {
   calculateOrderTotals,
   isOrderEditable,
@@ -71,20 +72,10 @@ export default function OrdersClient() {
     [products]
   );
 
-  const productsByCategory = useMemo(() => {
-    const groups = new Map<string, Product[]>();
-
-    for (const product of availableProducts) {
-      const category = product.category?.trim() || "Geral";
-      const list = groups.get(category) ?? [];
-      list.push(product);
-      groups.set(category, list);
-    }
-
-    return Array.from(groups.entries()).sort(([a], [b]) =>
-      a.localeCompare(b, "pt-BR")
-    );
-  }, [availableProducts]);
+  const productsByCategory = useMemo(
+    () => groupProductsByCategory(availableProducts),
+    [availableProducts]
+  );
 
   const draftTotals = useMemo(() => {
     return calculateOrderTotals(sumItemsSubtotal(draftItems));

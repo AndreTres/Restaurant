@@ -51,7 +51,8 @@ function createSchema(db: DatabaseSync) {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT NOT NULL UNIQUE,
-      password TEXT NOT NULL
+      password TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'admin'
     );
 
     CREATE TABLE IF NOT EXISTS products (
@@ -160,10 +161,10 @@ function renumberTablesByArea(db: DatabaseSync, area: "outside" | "inside") {
 }
 
 function migrateSchema(db: DatabaseSync) {
-  const columns = db.prepare("PRAGMA table_info(tables)").all() as {
+  const tableColumns = db.prepare("PRAGMA table_info(tables)").all() as {
     name: string;
   }[];
-  const hasArea = columns.some((column) => column.name === "area");
+  const hasArea = tableColumns.some((column) => column.name === "area");
 
   if (!hasArea) {
     db.exec(
@@ -175,7 +176,27 @@ function migrateSchema(db: DatabaseSync) {
     rebuildTablesAreaUnique(db);
   }
 
+  const userColumns = db.prepare("PRAGMA table_info(users)").all() as {
+    name: string;
+  }[];
+  const hasRole = userColumns.some((column) => column.name === "role");
+
+  if (!hasRole) {
+    db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'admin'");
+  }
+
   return !hasArea;
+}
+
+function ensureDefaultUsers(db: DatabaseSync) {
+  const insert = db.prepare(
+    `INSERT INTO users (username, password, role)
+     VALUES (?, ?, ?)
+     ON CONFLICT(username) DO NOTHING`
+  );
+
+  insert.run("admin", "admin", "admin");
+  insert.run("user", "user", "waiter");
 }
 
 function ensureDefaultTables(db: DatabaseSync, areaJustAdded: boolean) {
@@ -203,16 +224,11 @@ function ensureDefaultTables(db: DatabaseSync, areaJustAdded: boolean) {
 }
 
 function seedIfEmpty(db: DatabaseSync) {
-  const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get() as
+  const productCount = db.prepare("SELECT COUNT(*) as count FROM products").get() as
     | { count: number }
     | undefined;
 
-  if (userCount && userCount.count > 0) return;
-
-  db.prepare("INSERT INTO users (username, password) VALUES (?, ?)").run(
-    "admin",
-    "admin"
-  );
+  if (productCount && productCount.count > 0) return;
 
   const insertProduct = db.prepare(
     "INSERT INTO products (name, description, price, category) VALUES (?, ?, ?, ?)"
@@ -256,6 +272,7 @@ export function getDb(): AppDatabase {
   db.exec("PRAGMA foreign_keys = ON");
   createSchema(db);
   const areaJustAdded = migrateSchema(db);
+  ensureDefaultUsers(db);
   seedIfEmpty(db);
   ensureDefaultTables(db, areaJustAdded);
   syncOrderTotalsWithService(db);

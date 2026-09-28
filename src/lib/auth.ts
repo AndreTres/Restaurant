@@ -1,13 +1,29 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getDb } from "./db";
+import type { UserRole } from "./types";
 
 const SESSION_COOKIE = "restaurant_session";
-const SESSION_VALUE = "admin-logged-in";
+const LEGACY_ADMIN_SESSION = "admin-logged-in";
+
+export type AuthUser = {
+  username: string;
+  role: UserRole;
+};
+
+function parseRole(value?: string): UserRole | null {
+  if (value === "waiter") return "waiter";
+  if (value === "admin" || value === LEGACY_ADMIN_SESSION) return "admin";
+  return null;
+}
+
+export async function getSessionRole() {
+  const cookieStore = await cookies();
+  return parseRole(cookieStore.get(SESSION_COOKIE)?.value);
+}
 
 export async function isAuthenticated() {
-  const cookieStore = await cookies();
-  return cookieStore.get(SESSION_COOKIE)?.value === SESSION_VALUE;
+  return (await getSessionRole()) !== null;
 }
 
 export async function requireAuth() {
@@ -18,18 +34,41 @@ export async function requireAuth() {
   return null;
 }
 
-export function validateLogin(username: string, password: string) {
-  const db = getDb();
-  const user = db
-    .prepare("SELECT id FROM users WHERE username = ? AND password = ?")
-    .get(username, password);
+export async function requireAdmin() {
+  const unauthorized = await requireAuth();
+  if (unauthorized) return unauthorized;
 
-  return Boolean(user);
+  const role = await getSessionRole();
+  if (role !== "admin") {
+    return NextResponse.json(
+      { error: "Acesso restrito ao administrador" },
+      { status: 403 }
+    );
+  }
+
+  return null;
 }
 
-export function createSessionResponse(body: object) {
+export function validateLogin(
+  username: string,
+  password: string
+): AuthUser | null {
+  const db = getDb();
+  const user = db
+    .prepare("SELECT username, role FROM users WHERE username = ? AND password = ?")
+    .get(username, password) as { username: string; role: string } | undefined;
+
+  if (!user) return null;
+
+  return {
+    username: user.username,
+    role: user.role === "waiter" ? "waiter" : "admin",
+  };
+}
+
+export function createSessionResponse(body: object, role: UserRole) {
   const response = NextResponse.json(body);
-  response.cookies.set(SESSION_COOKIE, SESSION_VALUE, {
+  response.cookies.set(SESSION_COOKIE, role, {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
@@ -49,4 +88,4 @@ export function clearSessionResponse() {
   return response;
 }
 
-export { SESSION_COOKIE, SESSION_VALUE };
+export { SESSION_COOKIE };

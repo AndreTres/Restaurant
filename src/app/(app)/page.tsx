@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSession } from "@/components/Session";
 import { apiGet } from "@/lib/api";
 import { formatMoney, formatTableLabel, orderStatusBadgeClass, statusLabel } from "@/lib/format";
 import type { DashboardStats, OrderWithDetails } from "@/lib/types";
 
 export default function DashboardPage() {
+  const { session } = useSession();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,12 +48,14 @@ export default function DashboardPage() {
           <div className="label">Pedidos abertos</div>
           <div className="value">{stats.openOrders}</div>
         </div>
-        <div className="card stat-card">
-          <div className="label">Receita de hoje</div>
-          <div className="value" style={{ fontSize: "1.25rem" }}>
-            {formatMoney(stats.todayRevenue)}
+        {session.role === "admin" ? (
+          <div className="card stat-card">
+            <div className="label">Receita de hoje</div>
+            <div className="value" style={{ fontSize: "1.25rem" }}>
+              {formatMoney(stats.todayRevenue)}
+            </div>
           </div>
-        </div>
+        ) : null}
         <div className="card stat-card">
           <div className="label">Mesas livres</div>
           <div className="value">{stats.freeTables}</div>
@@ -76,9 +80,11 @@ export default function DashboardPage() {
           <Link href="/tables" className="btn secondary">
             Mesas
           </Link>
-          <Link href="/history" className="btn secondary">
-            Histórico
-          </Link>
+          {session.role === "admin" ? (
+            <Link href="/history" className="btn secondary">
+              Histórico
+            </Link>
+          ) : null}
         </div>
       </section>
 

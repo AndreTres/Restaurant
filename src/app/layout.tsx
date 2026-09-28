@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { DisableNumberWheel } from "@/components/DisableNumberWheel";
+import { SessionProvider } from "@/components/Session";
 import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
@@ -24,8 +25,10 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body>
         <ToastProvider>
-          <DisableNumberWheel />
-          {children}
+          <SessionProvider>
+            <DisableNumberWheel />
+            {children}
+          </SessionProvider>
         </ToastProvider>
       </body>
     </html>

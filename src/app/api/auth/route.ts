@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   clearSessionResponse,
   createSessionResponse,
+  getSessionRole,
   isAuthenticated,
   validateLogin,
 } from "@/lib/auth";
 
 export async function GET() {
   const authenticated = await isAuthenticated();
-  return NextResponse.json({ authenticated });
+  const role = await getSessionRole();
+  return NextResponse.json({ authenticated, role });
 }
 
 export async function POST(request: NextRequest) {
@@ -23,14 +25,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!validateLogin(username, password)) {
+  const user = validateLogin(username, password);
+
+  if (!user) {
     return NextResponse.json(
       { error: "Usuário ou senha inválidos" },
       { status: 401 }
     );
   }
 
-  return createSessionResponse({ ok: true, username });
+  return createSessionResponse(
+    { ok: true, username: user.username, role: user.role },
+    user.role
+  );
 }
 
 export async function DELETE() {

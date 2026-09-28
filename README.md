@@ -4,14 +4,14 @@ Painel administrativo mobile-first para gestão do restaurante boliviano.
 
 ## O que tem
 
-- Login simples (`admin` / `admin`)
+- Login: admin `admin` / `admin` · garçom `user` / `user`
 - Dashboard com resumo do salão
 - CRUD de produtos (cardápio)
 - CRUD de garçons
 - CRUD de mesas (9 externas 1-9 + 8 internas 1-8)
 - Pedidos editáveis (adicionar/remover itens) e finalização
 - Taxa de serviço de **10%** no total do pedido
-- Histórico de pedidos finalizados com filtros (semana / mês / data)
+- Histórico de pedidos finalizados (somente admin) com filtros e controle de caixa
 
 ## Stack
 
@@ -30,7 +30,7 @@ Abra [http://localhost:3000](http://localhost:3000).
 
 ## Fluxo rápido no celular
 
-1. Entrar com `admin` / `admin`
+1. Entrar com `admin` / `admin` (ou `user` / `user` para garçom)
 2. Ir em **Pedidos → Novo**
 3. Escolher mesa, garçom e produtos
 4. Acompanhar status e finalizar quando pagar

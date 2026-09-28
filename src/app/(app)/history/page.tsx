@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { HistoryCharts } from "@/components/HistoryCharts";
 import { ConfirmModal } from "@/components/ConfirmModal";
 import { EmptyState } from "@/components/EmptyState";
 import { OrderTotals } from "@/components/OrderTotals";
@@ -22,6 +23,7 @@ import {
   statusLabel,
 } from "@/lib/format";
 import type { OrderWithDetails } from "@/lib/types";
+import { roundMoney, servicePercentLabel } from "@/lib/pricing";
 
 const PERIOD_OPTIONS: { value: HistoryPeriod; label: string }[] = [
   { value: "week", label: "Semana" },
@@ -98,6 +100,27 @@ function HistoryContent() {
     }
   }
 
+  const cash = useMemo(() => {
+    const count = orders.length;
+    const subtotal = roundMoney(
+      orders.reduce((sum, order) => sum + order.subtotal, 0)
+    );
+    const serviceFee = roundMoney(
+      orders.reduce((sum, order) => sum + order.service_fee, 0)
+    );
+    const total = roundMoney(
+      orders.reduce((sum, order) => sum + order.total, 0)
+    );
+
+    return {
+      count,
+      subtotal,
+      serviceFee,
+      total,
+      average: count ? roundMoney(total / count) : 0,
+    };
+  }, [orders]);
+
   return (
     <>
       <section className="card stack history-filters" style={{ marginBottom: 12 }}>
@@ -156,6 +179,48 @@ function HistoryContent() {
           {filters.period === "day" ? " · filtro por dia" : ""}
         </p>
       </section>
+
+      {!initialLoading ? (
+        <section className="card stack" style={{ marginBottom: 12 }}>
+          <div>
+            <strong>Controle de caixa</strong>
+            <p className="small muted" style={{ margin: "4px 0 0" }}>
+              Resumo dos pedidos finalizados neste período.
+            </p>
+          </div>
+          <div className="grid-2">
+            <div className="stat-card" style={{ padding: 0 }}>
+              <div className="label">Pedidos</div>
+              <div className="value">{cash.count}</div>
+            </div>
+            <div className="stat-card" style={{ padding: 0 }}>
+              <div className="label">Total em caixa</div>
+              <div className="value" style={{ fontSize: "1.25rem" }}>
+                {formatMoney(cash.total)}
+              </div>
+            </div>
+            <div className="stat-card" style={{ padding: 0 }}>
+              <div className="label">Subtotal</div>
+              <div className="value" style={{ fontSize: "1.25rem" }}>
+                {formatMoney(cash.subtotal)}
+              </div>
+            </div>
+            <div className="stat-card" style={{ padding: 0 }}>
+              <div className="label">Serviço ({servicePercentLabel()})</div>
+              <div className="value" style={{ fontSize: "1.25rem" }}>
+                {formatMoney(cash.serviceFee)}
+              </div>
+            </div>
+          </div>
+          <p className="small muted" style={{ margin: 0 }}>
+            Ticket médio: {formatMoney(cash.average)}
+          </p>
+        </section>
+      ) : null}
+
+      {!initialLoading ? (
+        <HistoryCharts orders={orders} filters={filters} />
+      ) : null}
 
       {initialLoading ? (
         <p className="muted">Carregando histórico...</p>
@@ -269,7 +334,7 @@ export default function HistoryPage() {
       <header className="page-header">
         <div>
           <h1>Histórico</h1>
-          <p>Pedidos finalizados - filtre por semana, mês ou data.</p>
+          <p>Pedidos finalizados e controle de caixa do período.</p>
         </div>
       </header>
 

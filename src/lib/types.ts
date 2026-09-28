@@ -28,6 +28,8 @@ export type Table = {
 
 export type OrderStatus = "open" | "preparing" | "ready" | "closed" | "cancelled";
 
+export type UserRole = "admin" | "waiter";
+
 export type Order = {
   id: number;
   table_id: number;

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth";
+import { requireAdmin, requireAuth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import {
   getOrderWithDetails,
@@ -140,6 +140,11 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
 
   if (!current) {
     return NextResponse.json({ error: "Pedido não encontrado" }, { status: 404 });
+  }
+
+  if (current.status === "closed" || current.status === "cancelled") {
+    const forbidden = await requireAdmin();
+    if (forbidden) return forbidden;
   }
 
   db.transaction(() => {

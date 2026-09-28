@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 const PUBLIC_PATHS = ["/login"];
 
+function sessionRole(value?: string) {
+  if (value === "waiter") return "waiter";
+  if (value === "admin" || value === "admin-logged-in") return "admin";
+  return null;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
@@ -15,14 +21,17 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = request.cookies.get("restaurant_session")?.value;
-  const authenticated = session === "admin-logged-in";
+  const role = sessionRole(request.cookies.get("restaurant_session")?.value);
 
-  if (!authenticated && !isPublic) {
+  if (!role && !isPublic) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (authenticated && pathname === "/login") {
+  if (role && pathname === "/login") {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  if (role === "waiter" && pathname.startsWith("/history")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
