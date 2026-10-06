@@ -100,14 +100,16 @@ export async function PUT(request: NextRequest, { params }: Params) {
       recalculateOrderTotal(orderId, db);
     }
 
-    const closedAt =
-      status === "closed" || status === "cancelled"
-        ? new Date().toISOString().replace("T", " ").slice(0, 19)
-        : null;
-
     db.prepare(
-      `UPDATE orders SET notes = ?, status = ?, closed_at = ? WHERE id = ?`
-    ).run(notes, status, closedAt, orderId);
+      `UPDATE orders
+       SET notes = ?,
+           status = ?,
+           closed_at = CASE
+             WHEN ? IN ('closed', 'cancelled') THEN datetime('now', 'localtime')
+             ELSE NULL
+           END
+       WHERE id = ?`
+    ).run(notes, status, status, orderId);
 
     if (status === "closed" || status === "cancelled") {
       releaseTable(current.table_id, db);
